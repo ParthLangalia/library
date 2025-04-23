@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Dashboard</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Header section -->
+    <header class="header">
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fas fa-book"></i>
+                <span>Library Management System</span>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar" id="userInitials">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">User Name</div>
+                    <div class="user-role" id="userRole">Role</div>
+                </div>
+                <button id="logoutBtn" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="container">
+        <!-- Search section -->
+        <section class="section" id="searchSection">
+            <h2 class="section-title">
+                <i class="fas fa-search"></i>
+                Search Books
+            </h2>
+            <form id="searchForm" class="search-form">
+                <div class="form-group">
+                    <label for="searchTitle">Title</label>
+                    <input type="text" id="searchTitle" class="form-control" placeholder="Enter book title...">
+                </div>
+                <div class="form-group">
+                    <label for="searchAuthor">Author</label>
+                    <input type="text" id="searchAuthor" class="form-control" placeholder="Enter author name...">
+                </div>
+                <div class="form-group">
+                    <label for="searchCategory">Category</label>
+                    <select id="searchCategory" class="form-control">
+                        <option value="">All Categories</option>
+                        <option value="FICTION">Fiction</option>
+                        <option value="NON_FICTION">Non-Fiction</option>
+                        <option value="SCIENCE">Science</option>
+                        <option value="TECHNOLOGY">Technology</option>
+                        <option value="HISTORY">History</option>
+                        <option value="PHILOSOPHY">Philosophy</option>
+                        <option value="PSYCHOLOGY">Psychology</option>
+                        <option value="BUSINESS">Business</option>
+                        <option value="BIOGRAPHY">Biography</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+            </form>
+            
+            <!-- Search results -->
+            <div id="searchResults">
+                <div class="book-grid" id="booksGrid">
+                    <!-- Books will be populated here via JavaScript -->
+                </div>
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <div>No books found. Try different search criteria.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Borrowed Books section -->
+        <section class="section" id="borrowedSection">
+            <h2 class="section-title">
+                <i class="fas fa-book-reader"></i>
+                My Borrowed Books
+            </h2>
+            <div id="borrowedBooks">
+                <div class="book-grid" id="borrowedBooksGrid">
+                    <!-- Borrowed books will be populated here via JavaScript -->
+                </div>
+                <div class="no-results" id="noBorrowedBooks" style="display: none;">
+                    <i class="fas fa-book" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <div>You haven't borrowed any books yet.</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Book detail modal -->
+    <div class="modal" id="bookDetailModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModalBtn">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body" id="bookDetailContent">
+                <!-- Book details will be populated here via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div class="loading" id="loadingIndicator">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Messages container -->
+    <div class="message-container" id="messageContainer">
+        <!-- Messages will be dynamically added here -->
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="js/dashboard.js"></script>
+</body>
+</html> 
