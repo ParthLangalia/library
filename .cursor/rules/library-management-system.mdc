@@ -1,0 +1,37 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Project Details and requirements
+
+- It is currently java maven project which was initially built using eclipse on windows but i am on a macos now. The project needs to be cross platform.
+- This is a library management system.
+- You can find the backend files under the @java folder inside src/main
+- You can find the backend configuration files under @resources folder inside src/main
+- You can find the current frontend implementation under the @webapp folder inside src/main.
+- The system is based on Postgresql db.
+- The system needs to be deployed with Apache TomCat ver 9.
+- The project also needs to be tested extensively.
+- The database is currently operating on two tables @BookDAO.java and @BorrowedBook.java 
+- The project should be compatible on windows as well so we should not change any core configurations.
+- The project should exclusively use struts and be executable on Eclipse on Windows.
+- Wait for me to enter the password in the terminal for at least 20 seconds and dont come to the conclusion that its not working or is inaccesible.
+- Remember to kill all the tomcat instances before starting a new one because it shows port in use
+- Use Struts for rest endpoints
+
+# Functionalities required
+
+- Users should be able to search books on the homepage by title, author, genre on the frontend and it should return back with a list of books with the title of the book being displayed in each individual box for every book found from the database. Initially only the titles of the books will be visible on the box with a down arrow placed at the the very end of the box to expand it down. Upon expanding the box, it should display the details of the books which include the author, genre and current available copies. The box should also contain a Borrow button, upon clicking the button, book will be borrowed and the change should be reflected in the database. Also show a confirmation popup after verifying the successful borrowing of book and changes made in the db. The popup should also have a cross to remove the popup.
+
+- On the homepage the below the search funtionality, there should be a section displaying the currently issued books by the user. Each issued book should be displayed inside a box with the title of the book and the date of return being displayed beside it. Also a Return button should be displayed inside each book box, upon clicking the button the database should get updated and show a confirmation popup after verifying the successful returning of book and changes made in the db. The popup should also have a cross to remove the popup.
+
+- The UI should be functional and should be minimalistic. It should look like a professional project.
+- Books db and borrowed books db should be updated concurrently.
+
+
+
+
+
+

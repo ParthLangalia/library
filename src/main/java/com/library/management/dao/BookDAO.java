@@ -1,4 +1,4 @@
-	package com.library.management.dao;
+package com.library.management.dao;
 
 import javax.persistence.*;
 import javax.persistence.Query;
@@ -41,7 +41,7 @@ public class BookDAO {
 	
 	//UPDATE OPERATIONS
 	//UPDATE USER - 'U'
-	public void updateBook(int bookId, String newAuthor, String newGenre, String newTitle, int newTotalCopies) {
+	public void updateBook(int bookId, String newTitle, String newAuthor, String newGenre, int newTotalCopies) {
 		EntityTransaction transaction = em1.getTransaction();
 		try {
 			transaction.begin();
@@ -73,7 +73,7 @@ public class BookDAO {
 	}	
 	
 	//update book by title
-	public void updateBookByTitle(String newAuthor, String newGenre, String newTitle, int newTotalCopies){
+	public void updateBookByTitle(String newAuthor, String newTitle, String newGenre,  int newTotalCopies){
 		em1.getTransaction().begin();
 		Query query = em1.createQuery("UPDATE Book b SET b.author = :newAuthor, b.genre = :newGenre, b.totalCopies = :newTotalCopies WHERE b.title = :newTitle");
 		query.setParameter("newAuthor", newAuthor);
