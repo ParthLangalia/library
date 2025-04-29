@@ -57,7 +57,7 @@ function confirmBorrow(bookId) {
 function borrowBookById(bookId) {
   var userId = localStorage.getItem("userId");
   var url =
-    "http://localhost:8080/LibraryManagement/api/borrowed/borrow?bookId=" +
+    "/api/borrowed/borrow?bookId=" +
     bookId +
     "&userId=" +
     userId;
@@ -79,7 +79,7 @@ function loadBorrowedBooks() {
   var xhr = new XMLHttpRequest();
   xhr.open(
     "GET",
-    "http://localhost:8080/LibraryManagement/api/borrowed/all",
+    "api/books/borrowed/all",
     true
   );
   xhr.onreadystatechange = function () {

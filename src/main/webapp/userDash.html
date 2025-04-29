@@ -359,44 +359,87 @@
       }
 
       // Load borrowed books
+      // async function loadBorrowedBooks() {
+      //   showLoading();
+
+      //   try {
+      //     const userId = localStorage.getItem("userId");
+      //     console.log(userId);
+      //     const response = await fetch(`/api/books/borrowed?userId=${userId}`, {
+      //       method: "GET",
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //     });
+
+      //     if (!response.ok) {
+      //       throw new Error("Failed to load borrowed books");
+      //     }
+
+      //     const books = await response.json();
+
+      //     if (!books || books.length === 0) {
+      //       noBorrowedBooks.style.display = "block";
+      //       return;
+      //     }
+
+      //     noBorrowedBooks.style.display = "none";
+      //     borrowedBooksGrid.innerHTML = "";
+
+      //     books.forEach((book) => {
+      //       const bookCard = createBookCard(book, true);
+      //       borrowedBooksGrid.appendChild(bookCard);
+      //     });
+      //   } catch (error) {
+      //     console.error("Error loading borrowed books:", error);
+      //     showMessage("Error loading borrowed books.", "error");
+      //     noBorrowedBooks.style.display = "block";
+      //   } finally {
+      //     hideLoading();
+      //   }
+      // }
       async function loadBorrowedBooks() {
-        showLoading();
+  showLoading();
+  try {
+    const userId = localStorage.getItem("userId");
+    console.log(userId);
 
-        try {
-          const userId = localStorage.getItem("userId");
-          const response = await fetch(`/api/books/borrowed?userId=${userId}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+    const response = await fetch(`/api/borrowed/all`, {   // 👈 Corrected URL
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-          if (!response.ok) {
-            throw new Error("Failed to load borrowed books");
-          }
+    if (!response.ok) {
+      throw new Error("Failed to load borrowed books");
+    }
 
-          const books = await response.json();
+    const allBorrowed = await response.json();
 
-          if (!books || books.length === 0) {
-            noBorrowedBooks.style.display = "block";
-            return;
-          }
+    const borrowedBooks = allBorrowed.filter(bb => bb.user.id == userId);
 
-          noBorrowedBooks.style.display = "none";
-          borrowedBooksGrid.innerHTML = "";
+    if (!borrowedBooks || borrowedBooks.length === 0) {
+      noBorrowedBooks.style.display = "block";
+      return;
+    }
 
-          books.forEach((book) => {
-            const bookCard = createBookCard(book, true);
-            borrowedBooksGrid.appendChild(bookCard);
-          });
-        } catch (error) {
-          console.error("Error loading borrowed books:", error);
-          showMessage("Error loading borrowed books.", "error");
-          noBorrowedBooks.style.display = "block";
-        } finally {
-          hideLoading();
-        }
-      }
+    noBorrowedBooks.style.display = "none";
+    borrowedBooksGrid.innerHTML = "";
+
+    borrowedBooks.forEach((book) => {
+      const bookCard = createBookCard(book, true);
+      borrowedBooksGrid.appendChild(bookCard);
+    });
+  } catch (error) {
+    console.error("Error loading borrowed books:", error);
+    showMessage("Error loading borrowed books.", "error");
+    noBorrowedBooks.style.display = "block";
+  } finally {
+    hideLoading();
+  }
+}
+
 
       // Create a book card
       function createBookCard(book, isBorrowed) {
@@ -405,7 +448,7 @@
 
         const card = document.createElement("div");
         card.className = "book-card";
-        card.dataset.id = book.id;
+        card.dataset.id = book.bookId;
 
         const header = document.createElement("div");
         header.className = "book-header";
@@ -455,13 +498,13 @@
           const borrowBtn = document.createElement("button");
           borrowBtn.className = "btn btn-primary";
           borrowBtn.textContent = "Borrow";
-          borrowBtn.addEventListener("click", () => borrowBook(book.id));
+          borrowBtn.addEventListener("click", () => borrowBook(book.bookId));
           actions.appendChild(borrowBtn);
         } else if (isBorrowed) {
           const returnBtn = document.createElement("button");
           returnBtn.className = "btn btn-success";
           returnBtn.textContent = "Return";
-          returnBtn.addEventListener("click", () => returnBook(book.id));
+          returnBtn.addEventListener("click", () => returnBook(book.bookId));
           actions.appendChild(returnBtn);
         }
 
