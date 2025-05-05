@@ -83,6 +83,29 @@
         border-left: 4px solid #17a2b8;
       }
 
+      .message-text {
+        color: #333;
+        margin-left: 10px;
+        flex-grow: 1;
+      }
+
+      .message-icon {
+        color: #666;
+        font-size: 1.2rem;
+      }
+
+      .message-success .message-icon {
+        color: #28a745;
+      }
+
+      .message-error .message-icon {
+        color: #dc3545;
+      }
+
+      .message-info .message-icon {
+        color: #17a2b8;
+      }
+
       @keyframes slideIn {
         from {
           transform: translateX(100%);
@@ -205,21 +228,27 @@
       </section>
 
       <!-- Borrowed Books Section -->
-      <section class="card">
-        <div class="card-header bg-success text-white">
-          <h2 class="h4 mb-0">Your Borrowed Books</h2>
-        </div>
-        <div class="card-body">
-          <div id="borrowedBooksGrid" class="row"></div>
-          <div
-            id="noBorrowedBooks"
-            class="text-center py-4"
-            style="display: none"
-          >
-            <p class="text-muted">You have no books currently borrowed.</p>
+      <div class="row">
+        <div class="col-md-12 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h4>Currently Borrowed Books</h4>
+            </div>
+            <div class="card-body">
+              <div id="borrowedBooksGrid" class="row">
+                <!-- Borrowed books will be displayed here -->
+              </div>
+              <div
+                id="noBorrowedBooks"
+                class="text-center text-muted"
+                style="display: none"
+              >
+                <p>No books currently borrowed</p>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
 
     <!-- Book Detail Modal -->
@@ -359,87 +388,108 @@
       }
 
       // Load borrowed books
-      // async function loadBorrowedBooks() {
-      //   showLoading();
-
-      //   try {
-      //     const userId = localStorage.getItem("userId");
-      //     console.log(userId);
-      //     const response = await fetch(`/api/books/borrowed?userId=${userId}`, {
-      //       method: "GET",
-      //       headers: {
-      //         "Content-Type": "application/json",
-      //       },
-      //     });
-
-      //     if (!response.ok) {
-      //       throw new Error("Failed to load borrowed books");
-      //     }
-
-      //     const books = await response.json();
-
-      //     if (!books || books.length === 0) {
-      //       noBorrowedBooks.style.display = "block";
-      //       return;
-      //     }
-
-      //     noBorrowedBooks.style.display = "none";
-      //     borrowedBooksGrid.innerHTML = "";
-
-      //     books.forEach((book) => {
-      //       const bookCard = createBookCard(book, true);
-      //       borrowedBooksGrid.appendChild(bookCard);
-      //     });
-      //   } catch (error) {
-      //     console.error("Error loading borrowed books:", error);
-      //     showMessage("Error loading borrowed books.", "error");
-      //     noBorrowedBooks.style.display = "block";
-      //   } finally {
-      //     hideLoading();
-      //   }
-      // }
       async function loadBorrowedBooks() {
-  showLoading();
-  try {
-    const userId = localStorage.getItem("userId");
-    console.log(userId);
+        try {
+          const userId = localStorage.getItem("userId");
+          if (!userId) {
+            console.error("User ID not found");
+            return;
+          }
 
-    const response = await fetch(`/api/borrowed/all`, {   // 👈 Corrected URL
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+          const response = await fetch(`getUserBooks.action?userId=${userId}`);
+          const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error("Failed to load borrowed books");
-    }
+          if (data.success) {
+            displayBorrowedBooks(data.books || []);
+          } else {
+            console.error("Error loading borrowed books:", data.message);
+            showError(data.message || "Failed to load borrowed books");
+          }
+        } catch (error) {
+          console.error("Error loading borrowed books:", error);
+          showError("Failed to load borrowed books");
+        }
+      }
 
-    const allBorrowed = await response.json();
+      // Display borrowed books
+      function displayBorrowedBooks(books) {
+        const borrowedBooksGrid = document.getElementById("borrowedBooksGrid");
+        const noBorrowedBooks = document.getElementById("noBorrowedBooks");
 
-    const borrowedBooks = allBorrowed.filter(bb => bb.user.id == userId);
+        if (!books || books.length === 0) {
+          borrowedBooksGrid.style.display = "none";
+          noBorrowedBooks.style.display = "block";
+          return;
+        }
 
-    if (!borrowedBooks || borrowedBooks.length === 0) {
-      noBorrowedBooks.style.display = "block";
-      return;
-    }
+        borrowedBooksGrid.style.display = "grid";
+        noBorrowedBooks.style.display = "none";
+        borrowedBooksGrid.innerHTML = "";
 
-    noBorrowedBooks.style.display = "none";
-    borrowedBooksGrid.innerHTML = "";
+        books.forEach((book) => {
+          const bookCard = document.createElement("div");
+          bookCard.className = "book-card";
+          bookCard.innerHTML = `
+            <h3>${book.book.title}</h3>
+            <p>Return Date: ${new Date(
+              book.returnDate
+            ).toLocaleDateString()}</p>
+            <button onclick="returnBook(${
+              book.borrowId
+            })" class="return-btn">Return Book</button>
+          `;
+          borrowedBooksGrid.appendChild(bookCard);
+        });
+      }
 
-    borrowedBooks.forEach((book) => {
-      const bookCard = createBookCard(book, true);
-      borrowedBooksGrid.appendChild(bookCard);
-    });
-  } catch (error) {
-    console.error("Error loading borrowed books:", error);
-    showMessage("Error loading borrowed books.", "error");
-    noBorrowedBooks.style.display = "block";
-  } finally {
-    hideLoading();
-  }
-}
+      // Return book function
+      async function returnBook(borrowId) {
+        try {
+          const response = await fetch(`returnBook.action?bookId=${borrowId}`, {
+            method: "POST",
+          });
+          const data = await response.json();
 
+          if (data.success) {
+            showSuccess(data.message || "Book returned successfully");
+            await loadBorrowedBooks(); // Refresh the borrowed books list
+          } else {
+            showError(data.message || "Failed to return book");
+          }
+        } catch (error) {
+          console.error("Error returning book:", error);
+          showError("Failed to return book");
+        }
+      }
+
+      // Borrow a book
+      async function borrowBook(bookId) {
+        try {
+          const userId = localStorage.getItem("userId");
+          if (!userId) {
+            showError("User not logged in");
+            return;
+          }
+
+          const response = await fetch(
+            `borrow.action?bookId=${bookId}&userId=${userId}`,
+            {
+              method: "POST",
+            }
+          );
+          const data = await response.json();
+
+          if (data.success) {
+            showSuccess(data.message || "Book borrowed successfully");
+            await loadBorrowedBooks(); // Refresh the borrowed books list
+          } else {
+            showError(data.message || "Failed to borrow book");
+          }
+        } catch (error) {
+          console.error("Error borrowing book:", error);
+          showError("Failed to borrow book");
+        }
+      }
 
       // Create a book card
       function createBookCard(book, isBorrowed) {
@@ -516,82 +566,6 @@
         return col;
       }
 
-      // Borrow a book
-      async function borrowBook(bookId) {
-        showLoading();
-
-        try {
-          const userId = localStorage.getItem("userId");
-          const response = await fetch(`/api/books/borrow`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              bookId: bookId,
-              userId: userId,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to borrow book");
-          }
-
-          showMessage("Book borrowed successfully!", "success");
-
-          // Refresh borrowed books
-          await loadBorrowedBooks();
-
-          // Refresh search results if any
-          if (booksGrid.children.length > 0) {
-            await searchForm.dispatchEvent(new Event("submit"));
-          }
-        } catch (error) {
-          console.error("Error borrowing book:", error);
-          showMessage("Error borrowing book. Please try again.", "error");
-        } finally {
-          hideLoading();
-        }
-      }
-
-      // Return a book
-      async function returnBook(bookId) {
-        showLoading();
-
-        try {
-          const userId = localStorage.getItem("userId");
-          const response = await fetch(`/api/books/return`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              bookId: bookId,
-              userId: userId,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to return book");
-          }
-
-          showMessage("Book returned successfully!", "success");
-
-          // Refresh borrowed books
-          await loadBorrowedBooks();
-
-          // Refresh search results if any
-          if (booksGrid.children.length > 0) {
-            await searchForm.dispatchEvent(new Event("submit"));
-          }
-        } catch (error) {
-          console.error("Error returning book:", error);
-          showMessage("Error returning book. Please try again.", "error");
-        } finally {
-          hideLoading();
-        }
-      }
-
       // Utility Functions
       function formatCategory(category) {
         if (!category) return "Uncategorized";
@@ -648,6 +622,14 @@
             }
           }, 300);
         }, 5000);
+      }
+
+      function showError(text) {
+        showMessage(text, "error");
+      }
+
+      function showSuccess(text) {
+        showMessage(text, "success");
       }
     </script>
   </body>

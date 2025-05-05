@@ -64,6 +64,15 @@ public class BorrowedBookDAO {
        TypedQuery<BorrowedBook> query = em2.createQuery("SELECT b FROM BorrowedBook b", BorrowedBook.class);
        return query.getResultList();
    }
+   // Fetch borrowed books by user ID
+   public List<BorrowedBook> fetchBorrowedBooksByUserId(int userId) {
+       TypedQuery<BorrowedBook> query = em2.createQuery(
+           "SELECT b FROM BorrowedBook b WHERE b.user.userId = :userId AND b.returned = false", 
+           BorrowedBook.class
+       );
+       query.setParameter("userId", userId);
+       return query.getResultList();
+   }
    // Update returned status and actual return date
    public void updateReturnStatus(int borrowId, boolean returned, int daysOverdue) {
        EntityTransaction transaction = em2.getTransaction();

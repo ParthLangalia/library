@@ -6,7 +6,6 @@ import com.library.management.model.Book;
 import com.library.management.model.BorrowedBook;
 import com.library.management.util.HibernateUtil;
 import com.opensymphony.xwork2.ActionSupport;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
@@ -27,6 +26,7 @@ public class BookAction extends ActionSupport {
     private List<Book> books;
     private List<BorrowedBook> borrowedBooks;
     private String message;
+    private boolean success;
     
     // Search action method
     public String search() {
@@ -79,10 +79,12 @@ public class BookAction extends ActionSupport {
         
         try {
             message = borrowedBookDAO.BorrowBook(bookId, userId);
+            success = true;
             return SUCCESS;
         } catch (Exception e) {
             logger.error("Error borrowing book", e);
             message = "Error occurred while borrowing the book";
+            success = false;
             return ERROR;
         } finally {
             if (em != null && em.isOpen()) {
@@ -103,13 +105,14 @@ public class BookAction extends ActionSupport {
         BorrowedBookDAO borrowedBookDAO = new BorrowedBookDAO(em);
         
         try {
-            // Assuming the bookId here is actually the borrowId
             borrowedBookDAO.updateReturnStatus(bookId, true, 0);
             message = "Book returned successfully";
+            success = true;
             return SUCCESS;
         } catch (Exception e) {
             logger.error("Error returning book", e);
             message = "Error occurred while returning the book";
+            success = false;
             return ERROR;
         } finally {
             if (em != null && em.isOpen()) {
@@ -129,16 +132,14 @@ public class BookAction extends ActionSupport {
         EntityManager em = session.getEntityManagerFactory().createEntityManager();
         
         try {
-            // This should be implemented in BorrowedBookDAO
-            // For now, we're just getting all borrowed books
             BorrowedBookDAO borrowedBookDAO = new BorrowedBookDAO(em);
-            borrowedBooks = borrowedBookDAO.fetchAllBorrowedBooks();
-            // In a real implementation, you would filter by user ID
-            
+            borrowedBooks = borrowedBookDAO.fetchBorrowedBooksByUserId(userId);
+            success = true;
             return SUCCESS;
         } catch (Exception e) {
             logger.error("Error fetching user's borrowed books", e);
             message = "Error occurred while fetching borrowed books";
+            success = false;
             return ERROR;
         } finally {
             if (em != null && em.isOpen()) {
@@ -213,5 +214,13 @@ public class BookAction extends ActionSupport {
     
     public void setMessage(String message) {
         this.message = message;
+    }
+    
+    public boolean isSuccess() {
+        return success;
+    }
+    
+    public void setSuccess(boolean success) {
+        this.success = success;
     }
 } 

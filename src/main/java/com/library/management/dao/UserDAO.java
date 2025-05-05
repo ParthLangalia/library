@@ -129,19 +129,24 @@ public class UserDAO {
 	
 	//DELETE USER - 'D'
 	public void deleteUser(int userId) {
-		EntityTransaction transaction = em.getTransaction();
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction transaction = null;
 		try {
-			transaction.begin();
-			User newUser = em.find(User.class, userId);
-			if(newUser != null){
-				em.remove(newUser);
-			}else {
+			transaction = session.beginTransaction();
+			User user = session.get(User.class, userId);
+			if (user != null) {
+				session.delete(user);
+			} else {
 				System.out.println("User not present in db");
 			}
 			transaction.commit();
-		}catch (Exception e) {
-			if(transaction.isActive()) transaction.rollback();
+		} catch (Exception e) {
+			if (transaction != null) {
+				transaction.rollback();
+			}
 			e.printStackTrace();
+		} finally {
+			session.close();
 		}
 	}
 	
@@ -176,6 +181,40 @@ public class UserDAO {
 		}catch (Exception e) {
 			if(transaction.isActive()) transaction.rollback();
 			e.printStackTrace();
+		}
+	}
+
+	public void addUser(User user) {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction transaction = null;
+		try {
+			transaction = session.beginTransaction();
+			session.save(user);
+			transaction.commit();
+		} catch (Exception e) {
+			if (transaction != null) {
+				transaction.rollback();
+			}
+			throw e;
+		} finally {
+			session.close();
+		}
+	}
+
+	public void updateUser(User user) {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction transaction = null;
+		try {
+			transaction = session.beginTransaction();
+			session.update(user);
+			transaction.commit();
+		} catch (Exception e) {
+			if (transaction != null) {
+				transaction.rollback();
+			}
+			throw e;
+		} finally {
+			session.close();
 		}
 	}
 

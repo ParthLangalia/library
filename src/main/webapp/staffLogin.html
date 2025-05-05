@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Login - Library Management System</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .login-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        width: 100%;
+        max-width: 400px;
+      }
+      .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .login-header i {
+        font-size: 3rem;
+        color: #4b6cb7;
+        margin-bottom: 1rem;
+      }
+      .form-control {
+        border-radius: 5px;
+        padding: 0.75rem 1rem;
+      }
+      .btn-login {
+        background: linear-gradient(45deg, #4b6cb7, #182848);
+        border: none;
+        padding: 0.75rem;
+        border-radius: 5px;
+        width: 100%;
+        color: white;
+        font-weight: 500;
+        margin-top: 1rem;
+      }
+      .btn-login:hover {
+        background: linear-gradient(45deg, #182848, #4b6cb7);
+        color: white;
+      }
+      .message {
+        display: none;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 5px;
+        align-items: center;
+      }
+      .message i {
+        margin-right: 0.5rem;
+        font-size: 1.25rem;
+      }
+      .message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .back-link {
+        text-align: center;
+        margin-top: 1rem;
+      }
+      .back-link a {
+        color: #4b6cb7;
+        text-decoration: none;
+      }
+      .back-link a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-header">
+        <i class="fas fa-user-shield"></i>
+        <h2>Staff Login</h2>
+        <p class="text-muted">Access the staff dashboard</p>
+      </div>
+
+      <div id="messageContainer"></div>
+
+      <form id="loginForm" onsubmit="return handleLogin(event)">
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" required />
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" required />
+        </div>
+        <button type="submit" class="btn btn-login">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+      </form>
+
+      <div class="back-link">
+        <a href="index.html">
+          <i class="fas fa-arrow-left"></i> Back to Main Login
+        </a>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      async function handleLogin(event) {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch("stafflogin.action", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: email,
+              password: password,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Store staff info in localStorage
+            localStorage.setItem("staffId", data.userId);
+            localStorage.setItem("staffName", data.name);
+            localStorage.setItem("staffRole", data.role);
+
+            // Redirect to staff dashboard
+            window.location.href = "staffDash.html";
+          } else {
+            showError(data.message || "Invalid credentials");
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          showError("An error occurred during login");
+        }
+
+        return false;
+      }
+
+      function showError(text) {
+        const messageContainer = document.getElementById("messageContainer");
+        const message = document.createElement("div");
+        message.className = "message error";
+        message.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${text}</span>
+            `;
+
+        messageContainer.innerHTML = "";
+        messageContainer.appendChild(message);
+        message.style.display = "flex";
+
+        setTimeout(() => {
+          message.style.display = "none";
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>
