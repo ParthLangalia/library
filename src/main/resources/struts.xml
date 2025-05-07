@@ -50,30 +50,4 @@
 			<result name="error">/error.jsp</result>
 		</action>
 	</package>
-
-	<package name="default" extends="struts-default">
-		<result-types>
-			<result-type name="json" class="com.library.management.action.JsonResult"/>
-		</result-types>
-		
-		<action name="getUserBooks" class="com.library.management.action.BookAction" method="getUserBooks">
-			<result name="success" type="json"/>
-			<result name="error" type="json"/>
-		</action>
-		
-		<action name="returnBook" class="com.library.management.action.BookAction" method="returnBook">
-			<result name="success" type="json"/>
-			<result name="error" type="json"/>
-		</action>
-		
-		<action name="borrow" class="com.library.management.action.BookAction" method="borrow">
-			<result name="success" type="json"/>
-			<result name="error" type="json"/>
-		</action>
-		
-		<action name="search" class="com.library.management.action.BookAction" method="search">
-			<result name="success">/books/search-results.jsp</result>
-			<result name="error">/error.jsp</result>
-		</action>
-	</package>
 </struts>

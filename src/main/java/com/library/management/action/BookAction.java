@@ -6,13 +6,20 @@ import com.library.management.model.Book;
 import com.library.management.model.BorrowedBook;
 import com.library.management.util.HibernateUtil;
 import com.opensymphony.xwork2.ActionSupport;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import javax.persistence.EntityManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.struts2.ServletActionContext;
+import javax.servlet.http.HttpServletResponse;
 
 public class BookAction extends ActionSupport {
     private static final long serialVersionUID = 1L;
@@ -26,7 +33,6 @@ public class BookAction extends ActionSupport {
     private List<Book> books;
     private List<BorrowedBook> borrowedBooks;
     private String message;
-    private boolean success;
     
     // Search action method
     public String search() {
@@ -79,12 +85,10 @@ public class BookAction extends ActionSupport {
         
         try {
             message = borrowedBookDAO.BorrowBook(bookId, userId);
-            success = true;
             return SUCCESS;
         } catch (Exception e) {
             logger.error("Error borrowing book", e);
             message = "Error occurred while borrowing the book";
-            success = false;
             return ERROR;
         } finally {
             if (em != null && em.isOpen()) {
@@ -106,13 +110,26 @@ public class BookAction extends ActionSupport {
         
         try {
             borrowedBookDAO.updateReturnStatus(bookId, true, 0);
-            message = "Book returned successfully";
-            success = true;
-            return SUCCESS;
+            
+            // Set response type to JSON
+            HttpServletResponse response = ServletActionContext.getResponse();
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            
+            // Create success response
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Book returned successfully");
+            
+            // Convert to JSON
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonResponse = mapper.writeValueAsString(result);
+            response.getWriter().write(jsonResponse);
+            
+            return null; // Return null since we're handling the response directly
         } catch (Exception e) {
             logger.error("Error returning book", e);
             message = "Error occurred while returning the book";
-            success = false;
             return ERROR;
         } finally {
             if (em != null && em.isOpen()) {
@@ -134,12 +151,21 @@ public class BookAction extends ActionSupport {
         try {
             BorrowedBookDAO borrowedBookDAO = new BorrowedBookDAO(em);
             borrowedBooks = borrowedBookDAO.fetchBorrowedBooksByUserId(userId);
-            success = true;
-            return SUCCESS;
+            
+            // Set response type to JSON
+            HttpServletResponse response = ServletActionContext.getResponse();
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            
+            // Convert borrowed books to JSON
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonResponse = mapper.writeValueAsString(borrowedBooks);
+            response.getWriter().write(jsonResponse);
+            
+            return null; // Return null since we're handling the response directly
         } catch (Exception e) {
             logger.error("Error fetching user's borrowed books", e);
             message = "Error occurred while fetching borrowed books";
-            success = false;
             return ERROR;
         } finally {
             if (em != null && em.isOpen()) {
@@ -214,13 +240,5 @@ public class BookAction extends ActionSupport {
     
     public void setMessage(String message) {
         this.message = message;
-    }
-    
-    public boolean isSuccess() {
-        return success;
-    }
-    
-    public void setSuccess(boolean success) {
-        this.success = success;
     }
 } 

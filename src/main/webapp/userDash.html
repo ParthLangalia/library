@@ -83,29 +83,6 @@
         border-left: 4px solid #17a2b8;
       }
 
-      .message-text {
-        color: #333;
-        margin-left: 10px;
-        flex-grow: 1;
-      }
-
-      .message-icon {
-        color: #666;
-        font-size: 1.2rem;
-      }
-
-      .message-success .message-icon {
-        color: #28a745;
-      }
-
-      .message-error .message-icon {
-        color: #dc3545;
-      }
-
-      .message-info .message-icon {
-        color: #17a2b8;
-      }
-
       @keyframes slideIn {
         from {
           transform: translateX(100%);
@@ -144,44 +121,6 @@
         to {
           transform: rotate(360deg);
         }
-      }
-
-      #borrowedBooksGrid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1rem;
-      }
-
-      .return-btn {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        width: 100%;
-        margin-top: 1rem;
-      }
-
-      .return-btn:hover {
-        background-color: #c82333;
-      }
-
-      .borrow-btn {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        width: 100%;
-        margin-top: 1rem;
-      }
-
-      .borrow-btn:hover {
-        background-color: #218838;
       }
     </style>
   </head>
@@ -383,23 +322,26 @@
           if (genre) params.append("genre", genre);
 
           // Make API request
-          const response = await fetch(`search.action?${params.toString()}`);
+          const response = await fetch(
+            `/api/books/search?${params.toString()}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
           if (!response.ok) {
             throw new Error("Failed to search books");
           }
 
-          const data = await response.json();
-          if (data.success) {
-            displaySearchResults(data.books || []);
-          } else {
-            showError(data.message || "Failed to search books");
-            noResults.style.display = "block";
-          }
+          const books = await response.json();
+          displaySearchResults(books);
         } catch (error) {
           console.error("Search error:", error);
-          showError("Error searching books. Please try again.");
-          noResults.style.display = "block";
+          showMessage("Error searching books. Please try again.", "error");
+          noResults.style.display = "flex";
         } finally {
           hideLoading();
         }
@@ -424,105 +366,107 @@
 
       // Load borrowed books
       async function loadBorrowedBooks() {
+        showLoading();
         try {
           const userId = localStorage.getItem("userId");
-          if (!userId) {
-            console.error("User ID not found");
-            return;
-          }
+          if (!userId) return;
 
-          const response = await fetch(`getUserBooks.action?userId=${userId}`);
-          const data = await response.json();
+          const response = await fetch(
+            `/books/userBooks.action?userId=${userId}`
+          );
+          if (!response.ok) throw new Error("Failed to fetch borrowed books");
 
-          if (data.success) {
-            displayBorrowedBooks(data.books || []);
-          } else {
-            console.error("Error loading borrowed books:", data.message);
-            showError(data.message || "Failed to load borrowed books");
-          }
+          const borrowedBooks = await response.json();
+          displayBorrowedBooks(borrowedBooks);
         } catch (error) {
           console.error("Error loading borrowed books:", error);
-          showError("Failed to load borrowed books");
+          showMessage("Error loading borrowed books", "error");
+        } finally {
+          hideLoading();
         }
       }
 
       // Display borrowed books
       function displayBorrowedBooks(books) {
-        const borrowedBooksGrid = document.getElementById("borrowedBooksGrid");
-        const noBorrowedBooks = document.getElementById("noBorrowedBooks");
+        const grid = document.getElementById("borrowedBooksGrid");
+        const noBooks = document.getElementById("noBorrowedBooks");
+
+        grid.innerHTML = "";
 
         if (!books || books.length === 0) {
-          borrowedBooksGrid.style.display = "none";
-          noBorrowedBooks.style.display = "block";
+          noBooks.style.display = "block";
           return;
         }
 
-        borrowedBooksGrid.style.display = "grid";
-        noBorrowedBooks.style.display = "none";
-        borrowedBooksGrid.innerHTML = "";
-
+        noBooks.style.display = "none";
         books.forEach((book) => {
           const bookCard = document.createElement("div");
-          bookCard.className = "book-card";
+          bookCard.className = "col-md-6 col-lg-4 mb-3";
           bookCard.innerHTML = `
-            <h3>${book.book.title}</h3>
-            <p>Return Date: ${new Date(
-              book.returnDate
-            ).toLocaleDateString()}</p>
-            <button onclick="returnBook(${
-              book.borrowId
-            })" class="return-btn">Return Book</button>
+            <div class="book-card">
+              <div class="book-header">
+                <h5 class="book-title">${escapeHtml(book.book.title)}</h5>
+                <button class="btn btn-sm btn-outline-secondary toggle-details">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="book-details" style="display: none;">
+                <p><strong>Author:</strong> ${escapeHtml(book.book.author)}</p>
+                <p><strong>Genre:</strong> ${escapeHtml(book.book.genre)}</p>
+                <p><strong>Return by:</strong> ${formatDate(
+                  book.returnDate
+                )}</p>
+                <button class="btn btn-primary return-btn" onclick="returnBook(${
+                  book.borrowId
+                })">
+                  Return Book
+                </button>
+              </div>
+            </div>
           `;
-          borrowedBooksGrid.appendChild(bookCard);
+
+          // Add click handler for toggle button
+          const toggleBtn = bookCard.querySelector(".toggle-details");
+          const details = bookCard.querySelector(".book-details");
+          toggleBtn.addEventListener("click", () => {
+            if (details.style.display === "none") {
+              details.style.display = "block";
+              toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            } else {
+              details.style.display = "none";
+              toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+          });
+
+          grid.appendChild(bookCard);
         });
       }
 
       // Return book function
       async function returnBook(borrowId) {
+        showLoading();
         try {
-          const response = await fetch(`returnBook.action?bookId=${borrowId}`, {
-            method: "POST",
-          });
-          const data = await response.json();
-
-          if (data.success) {
-            showSuccess(data.message || "Book returned successfully");
-            await loadBorrowedBooks(); // Refresh the borrowed books list
-          } else {
-            showError(data.message || "Failed to return book");
-          }
-        } catch (error) {
-          console.error("Error returning book:", error);
-          showError("Failed to return book");
-        }
-      }
-
-      // Borrow a book
-      async function borrowBook(bookId) {
-        try {
-          const userId = localStorage.getItem("userId");
-          if (!userId) {
-            showError("User not logged in");
-            return;
-          }
-
           const response = await fetch(
-            `borrow.action?bookId=${bookId}&userId=${userId}`,
+            `/books/return.action?bookId=${borrowId}`,
             {
               method: "POST",
             }
           );
-          const data = await response.json();
 
-          if (data.success) {
-            showSuccess(data.message || "Book borrowed successfully");
-            await loadBorrowedBooks(); // Refresh the borrowed books list
+          if (!response.ok) throw new Error("Failed to return book");
+
+          const result = await response.json();
+          if (result.success) {
+            showMessage("Book returned successfully", "success");
+            loadBorrowedBooks(); // Refresh the list
           } else {
-            showError(data.message || "Failed to borrow book");
+            showMessage(result.message || "Error returning book", "error");
           }
         } catch (error) {
-          console.error("Error borrowing book:", error);
-          showError("Failed to borrow book");
+          console.error("Error returning book:", error);
+          showMessage("Error returning book", "error");
+        } finally {
+          hideLoading();
         }
       }
 
@@ -540,7 +484,7 @@
 
         const title = document.createElement("h3");
         title.className = "book-title";
-        title.textContent = book.book ? book.book.title : book.title;
+        title.textContent = book.title;
 
         const toggleBtn = document.createElement("button");
         toggleBtn.className = "btn btn-sm btn-outline-secondary";
@@ -561,17 +505,16 @@
 
         const details = document.createElement("div");
         details.className = "book-details";
-        const bookData = book.book || book;
         details.innerHTML = `
-                <p><strong>Author:</strong> ${bookData.author || "Unknown"}</p>
-                <p><strong>Genre:</strong> ${formatCategory(bookData.genre)}</p>
+                <p><strong>Author:</strong> ${book.author || "Unknown"}</p>
+                <p><strong>Genre:</strong> ${formatCategory(book.genre)}</p>
                 <p><strong>Available Copies:</strong> ${
-                  bookData.availableCopies || 0
+                  book.availableCopies || 0
                 }</p>
                 ${
                   isBorrowed
                     ? `<p><strong>Due Date:</strong> ${formatDate(
-                        book.returnDate
+                        book.dueDate
                       )}</p>`
                     : ""
                 }
@@ -580,19 +523,17 @@
         const actions = document.createElement("div");
         actions.className = "book-actions";
 
-        if (!isBorrowed && bookData.availableCopies > 0) {
+        if (!isBorrowed && book.availableCopies > 0) {
           const borrowBtn = document.createElement("button");
-          borrowBtn.className = "borrow-btn";
+          borrowBtn.className = "btn btn-primary";
           borrowBtn.textContent = "Borrow";
-          borrowBtn.addEventListener("click", () =>
-            borrowBook(bookData.bookId)
-          );
+          borrowBtn.addEventListener("click", () => borrowBook(book.bookId));
           actions.appendChild(borrowBtn);
         } else if (isBorrowed) {
           const returnBtn = document.createElement("button");
-          returnBtn.className = "return-btn";
+          returnBtn.className = "btn btn-success";
           returnBtn.textContent = "Return";
-          returnBtn.addEventListener("click", () => returnBook(book.borrowId));
+          returnBtn.addEventListener("click", () => returnBook(book.bookId));
           actions.appendChild(returnBtn);
         }
 
@@ -602,6 +543,44 @@
         col.appendChild(card);
 
         return col;
+      }
+
+      // Borrow a book
+      async function borrowBook(bookId) {
+        showLoading();
+
+        try {
+          const userId = localStorage.getItem("userId");
+          const response = await fetch(`/api/books/borrow`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              bookId: bookId,
+              userId: userId,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to borrow book");
+          }
+
+          showMessage("Book borrowed successfully!", "success");
+
+          // Refresh borrowed books
+          await loadBorrowedBooks();
+
+          // Refresh search results if any
+          if (booksGrid.children.length > 0) {
+            await searchForm.dispatchEvent(new Event("submit"));
+          }
+        } catch (error) {
+          console.error("Error borrowing book:", error);
+          showMessage("Error borrowing book. Please try again.", "error");
+        } finally {
+          hideLoading();
+        }
       }
 
       // Utility Functions
@@ -660,14 +639,6 @@
             }
           }, 300);
         }, 5000);
-      }
-
-      function showError(text) {
-        showMessage(text, "error");
-      }
-
-      function showSuccess(text) {
-        showMessage(text, "success");
       }
     </script>
   </body>
