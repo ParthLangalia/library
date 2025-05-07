@@ -145,6 +145,44 @@
           transform: rotate(360deg);
         }
       }
+
+      #borrowedBooksGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+      }
+
+      .return-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        width: 100%;
+        margin-top: 1rem;
+      }
+
+      .return-btn:hover {
+        background-color: #c82333;
+      }
+
+      .borrow-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        width: 100%;
+        margin-top: 1rem;
+      }
+
+      .borrow-btn:hover {
+        background-color: #218838;
+      }
     </style>
   </head>
   <body class="bg-light">
@@ -345,26 +383,23 @@
           if (genre) params.append("genre", genre);
 
           // Make API request
-          const response = await fetch(
-            `/api/books/search?${params.toString()}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          const response = await fetch(`search.action?${params.toString()}`);
 
           if (!response.ok) {
             throw new Error("Failed to search books");
           }
 
-          const books = await response.json();
-          displaySearchResults(books);
+          const data = await response.json();
+          if (data.success) {
+            displaySearchResults(data.books || []);
+          } else {
+            showError(data.message || "Failed to search books");
+            noResults.style.display = "block";
+          }
         } catch (error) {
           console.error("Search error:", error);
-          showMessage("Error searching books. Please try again.", "error");
-          noResults.style.display = "flex";
+          showError("Error searching books. Please try again.");
+          noResults.style.display = "block";
         } finally {
           hideLoading();
         }
@@ -505,7 +540,7 @@
 
         const title = document.createElement("h3");
         title.className = "book-title";
-        title.textContent = book.title;
+        title.textContent = book.book ? book.book.title : book.title;
 
         const toggleBtn = document.createElement("button");
         toggleBtn.className = "btn btn-sm btn-outline-secondary";
@@ -526,16 +561,17 @@
 
         const details = document.createElement("div");
         details.className = "book-details";
+        const bookData = book.book || book;
         details.innerHTML = `
-                <p><strong>Author:</strong> ${book.author || "Unknown"}</p>
-                <p><strong>Genre:</strong> ${formatCategory(book.genre)}</p>
+                <p><strong>Author:</strong> ${bookData.author || "Unknown"}</p>
+                <p><strong>Genre:</strong> ${formatCategory(bookData.genre)}</p>
                 <p><strong>Available Copies:</strong> ${
-                  book.availableCopies || 0
+                  bookData.availableCopies || 0
                 }</p>
                 ${
                   isBorrowed
                     ? `<p><strong>Due Date:</strong> ${formatDate(
-                        book.dueDate
+                        book.returnDate
                       )}</p>`
                     : ""
                 }
@@ -544,17 +580,19 @@
         const actions = document.createElement("div");
         actions.className = "book-actions";
 
-        if (!isBorrowed && book.availableCopies > 0) {
+        if (!isBorrowed && bookData.availableCopies > 0) {
           const borrowBtn = document.createElement("button");
-          borrowBtn.className = "btn btn-primary";
+          borrowBtn.className = "borrow-btn";
           borrowBtn.textContent = "Borrow";
-          borrowBtn.addEventListener("click", () => borrowBook(book.bookId));
+          borrowBtn.addEventListener("click", () =>
+            borrowBook(bookData.bookId)
+          );
           actions.appendChild(borrowBtn);
         } else if (isBorrowed) {
           const returnBtn = document.createElement("button");
-          returnBtn.className = "btn btn-success";
+          returnBtn.className = "return-btn";
           returnBtn.textContent = "Return";
-          returnBtn.addEventListener("click", () => returnBook(book.bookId));
+          returnBtn.addEventListener("click", () => returnBook(book.borrowId));
           actions.appendChild(returnBtn);
         }
 

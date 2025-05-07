@@ -156,79 +156,28 @@ public class BookDAO {
 	//DELETE OPERATIONS
 	//DELETE BOOK - 'D'
 	public void deleteBook(int bookId) {
-		Session session = HibernateUtil.getSessionFactory().openSession();
-		Transaction transaction = null;
+		EntityTransaction transaction = em1.getTransaction();
 		try {
-			transaction = session.beginTransaction();
-			Book book = session.get(Book.class, bookId);
-			if (book != null) {
-				session.delete(book);
-			} else {
+			transaction.begin();
+			Book newBook = em1.find(Book.class, bookId);
+			if(newBook != null){
+				em1.remove(newBook);
+			}else {
 				System.out.println("Book not present in db");
 			}
 			transaction.commit();
-		} catch (Exception e) {
-			if (transaction != null) {
-				transaction.rollback();
-			}
+		}catch(Exception e){
+			if(transaction.isActive()) transaction.rollback();
 			e.printStackTrace();
-		} finally {
-			session.close();
 		}
 	}
 	
-	public void deleteBookByTitle(String title) {
-		Session session = HibernateUtil.getSessionFactory().openSession();
-		Transaction transaction = null;
-		try {
-			transaction = session.beginTransaction();
-			String hql = "DELETE FROM Book WHERE title = :title";
-			int deletedCount = session.createQuery(hql)
-					.setParameter("title", title)
-					.executeUpdate();
-			transaction.commit();
-			System.out.println(deletedCount + " book(s) deleted by title");	
-		} catch (Exception e) {
-			if (transaction != null) {
-				transaction.rollback();
-			}
-			throw e;
-		} finally {
-			session.close();
-		}
-	}
-
-	public void addBook(Book book) {
-		Session session = HibernateUtil.getSessionFactory().openSession();
-		Transaction transaction = null;
-		try {
-			transaction = session.beginTransaction();
-			session.save(book);
-			transaction.commit();
-		} catch (Exception e) {
-			if (transaction != null) {
-				transaction.rollback();
-			}
-			throw e;
-		} finally {
-			session.close();
-		}
-	}
-
-	public void updateBook(Book book) {
-		Session session = HibernateUtil.getSessionFactory().openSession();
-		Transaction transaction = null;
-		try {
-			transaction = session.beginTransaction();
-			session.update(book);
-			transaction.commit();
-		} catch (Exception e) {
-			if (transaction != null) {
-				transaction.rollback();
-			}
-			throw e;
-		} finally {
-			session.close();
-		}
+	public void deleteBookByTitle(String newTitle){
+		em1.getTransaction().begin();
+		Query query = em1.createQuery("DELETE FROM Book b WHERE b.title = :title");
+		query.setParameter("title", newTitle);
+		int deletedCount = query.executeUpdate();
+		em1.getTransaction().commit();
+		System.out.println(deletedCount + " book(s) deleted by title");	
 	}
 }
