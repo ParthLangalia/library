@@ -149,6 +149,10 @@ public class BookAction extends ActionSupport {
         EntityManager em = session.getEntityManagerFactory().createEntityManager();
         
         try {
+            if (userId <= 0) {
+                throw new IllegalArgumentException("Invalid user ID");
+            }
+
             BorrowedBookDAO borrowedBookDAO = new BorrowedBookDAO(em);
             borrowedBooks = borrowedBookDAO.fetchBorrowedBooksByUserId(userId);
             
@@ -156,17 +160,44 @@ public class BookAction extends ActionSupport {
             HttpServletResponse response = ServletActionContext.getResponse();
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setHeader("Expires", "0");
             
-            // Convert borrowed books to JSON
+            // Configure ObjectMapper to handle Hibernate proxies
             ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(borrowedBooks);
+            mapper.configure(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            mapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+            
+            // Create response object
+            Map<String, Object> responseObj = new HashMap<>();
+            responseObj.put("success", true);
+            responseObj.put("books", borrowedBooks);
+            
+            // Convert to JSON
+            String jsonResponse = mapper.writeValueAsString(responseObj);
             response.getWriter().write(jsonResponse);
             
             return null; // Return null since we're handling the response directly
         } catch (Exception e) {
             logger.error("Error fetching user's borrowed books", e);
-            message = "Error occurred while fetching borrowed books";
-            return ERROR;
+            try {
+                HttpServletResponse response = ServletActionContext.getResponse();
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Error occurred while fetching borrowed books: " + e.getMessage());
+                
+                ObjectMapper mapper = new ObjectMapper();
+                String jsonResponse = mapper.writeValueAsString(error);
+                response.getWriter().write(jsonResponse);
+            } catch (Exception ex) {
+                logger.error("Error sending error response", ex);
+            }
+            return null;
         } finally {
             if (em != null && em.isOpen()) {
                 em.close();

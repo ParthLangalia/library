@@ -69,6 +69,7 @@
         align-items: center;
         max-width: 300px;
         animation: slideIn 0.3s forwards;
+        color: #333;
       }
 
       .message-success {
@@ -77,10 +78,20 @@
 
       .message-error {
         border-left: 4px solid #dc3545;
+        color: #dc3545;
       }
 
       .message-info {
         border-left: 4px solid #17a2b8;
+      }
+
+      .message-icon {
+        margin-right: 10px;
+        font-size: 1.2em;
+      }
+
+      .message-text {
+        flex: 1;
       }
 
       @keyframes slideIn {
@@ -369,37 +380,76 @@
         showLoading();
         try {
           const userId = localStorage.getItem("userId");
-          if (!userId) return;
+          if (!userId) {
+            showMessage("User ID not found. Please log in again.", "error");
+            return;
+          }
 
           const response = await fetch(
-            `/books/userBooks.action?userId=${userId}`
+            `/books/userBooks.action?userId=${userId}`,
+            {
+              method: "GET",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+            }
           );
-          if (!response.ok) throw new Error("Failed to fetch borrowed books");
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Server response:", errorText);
+            throw new Error(
+              `Failed to fetch borrowed books: ${response.status} ${response.statusText}`
+            );
+          }
+
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            const errorText = await response.text();
+            console.error("Invalid content type:", contentType);
+            console.error("Response:", errorText);
+            throw new Error("Server returned non-JSON response");
+          }
 
           const borrowedBooks = await response.json();
+          console.log("Borrowed books:", borrowedBooks); // Debug log
           displayBorrowedBooks(borrowedBooks);
         } catch (error) {
           console.error("Error loading borrowed books:", error);
-          showMessage("Error loading borrowed books", "error");
+          showMessage(
+            "Error loading borrowed books: " + error.message,
+            "error"
+          );
         } finally {
           hideLoading();
         }
       }
 
       // Display borrowed books
-      function displayBorrowedBooks(books) {
+      function displayBorrowedBooks(response) {
         const grid = document.getElementById("borrowedBooksGrid");
         const noBooks = document.getElementById("noBorrowedBooks");
 
         grid.innerHTML = "";
 
-        if (!books || books.length === 0) {
+        if (
+          !response ||
+          !response.success ||
+          !response.books ||
+          response.books.length === 0
+        ) {
           noBooks.style.display = "block";
           return;
         }
 
         noBooks.style.display = "none";
-        books.forEach((book) => {
+        response.books.forEach((book) => {
+          if (!book.book) {
+            console.error("Invalid book data:", book);
+            return;
+          }
+
           const bookCard = document.createElement("div");
           bookCard.className = "col-md-6 col-lg-4 mb-3";
           bookCard.innerHTML = `
@@ -639,6 +689,14 @@
             }
           }, 300);
         }, 5000);
+      }
+
+      // Utility function to escape HTML
+      function escapeHtml(str) {
+        if (!str) return "";
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
       }
     </script>
   </body>
